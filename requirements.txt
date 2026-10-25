@@ -1,0 +1,11 @@
+# Nowe oficjalne SDK dla API Google Gemini
+google-genai>=0.1.0
+
+# Przetwarzanie i kompresja obrazu
+opencv-python>=4.8.0
+
+# Operacje macierzowe (zależność OpenCV)
+numpy>=1.24.0
+
+# Obsługa pinów GPIO na Banana Pi (dla przycisku i diod LED)
+WiringPi
