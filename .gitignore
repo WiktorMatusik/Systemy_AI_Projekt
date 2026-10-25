@@ -1,7 +1,6 @@
 KEY.json
 Results/
 Samples/
-DataSet1/
 __pycache__/
 *.pyc
 kamera.py
