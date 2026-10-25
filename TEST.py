@@ -38,11 +38,24 @@ os.makedirs(output_folder, exist_ok=True)
 
 pliki = [f for f in os.listdir(input_folder) if f.lower().endswith(('.jpg', '.png', '.jpeg'))]
 
-PROMPT = """
-Przeanalizuj dołączone zdjęcie dokumentu i wykonaj następujące zadania:
-1. Określ typ dokumentu (np. Program zajęć, Faktura, Umowa).
-2. Tytuł / Główny nagłówek.
-"""
+# Wczytanie instrukcji (prompta) z pliku PROMPT.json
+prompt_file_path = 'PROMPT.json'
+
+if not os.path.exists(prompt_file_path):
+    print(f"BŁĄD: Nie znaleziono pliku '{prompt_file_path}'!")
+    exit(1)
+
+try:
+    with open(prompt_file_path, 'r', encoding='utf-8') as f:
+        prompt_data = json.load(f)
+        PROMPT = prompt_data.get("prompt")
+
+    if not PROMPT:
+        print("BŁĄD: Plik 'PROMPT.json' nie zawiera pola 'prompt'!")
+        exit(1)
+except Exception as e:
+    print(f"BŁĄD podczas odczytywania pliku '{prompt_file_path}': {e}")
+    exit(1)
 
 MODELE = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-2.5-flash']
 
