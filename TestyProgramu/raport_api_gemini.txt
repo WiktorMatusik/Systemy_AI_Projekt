@@ -1,0 +1,56 @@
+=== RAPORT GEMINI API ===
+
+Plik: 1.jpg (Czas: 2.14s | Model: gemini-3.1-flash-lite)
+Na podstawie dostarczonego zdjęcia, oto analiza dokumentu:
+
+**1. Typ dokumentu:**
+Jest to wniosek studencki (wniosek o udzielenie urlopu dziekańskiego/zdrowotnego).
+
+**2. Tytuł / Główny nagłówek:**
+Wniosek o udzielenie urlopu
+
+**3. Tekst wpisany długopisem/ręcznie przez studenta:**
+*   **Data:** 16.08.2026
+*   **Nazwisko i imię:** Roman Bosyl
+*   **Nr albumu:** 11545
+*   **Kierunek/ rok studiów:** Informatyka 1
+*   **W treści wniosku:**
+    *   Rodzaj urlopu (wskazany jako): „dłuższy urlop” (trudne do odczytania, prawdopodobnie: „dziekańskiego”)
+    *   Okres: na semestr zimowy
+    *   Uzasadnienie: z powodów zdrowotnych
+*   **Podpis:** Roman Bosyl
+------------------------------------------------------------
+Plik: 6.jpg (Czas: 9.31s | Model: gemini-3.1-flash-lite)
+Na podstawie przesłanego zdjęcia przygotowałem analizę dokumentu:
+
+**1. Typ dokumentu:**
+Jest to wniosek studencki (podanie do dziekana) o powtarzanie zajęć z tzw. długiem kredytowym.
+
+**2. Tytuł / Główny nagłówek:**
+Wniosek o powtarzanie zajęć z długiem kredytowym
+
+**3. Tekst wpisany długopisem/ręcznie przez studenta:**
+*   **Miejscowość i data:** Nowy Sącz, dnia 20.08.2025 r.
+*   **Nazwisko i imię:** Roman Bosyl
+*   **Nr albumu:** 22222
+*   **Kierunek/ rok studiów:** Informatyka/1
+*   **Rok akademicki:** 2025/2026
+*   **Semestr:** 1
+*   **Liczba niezaliczonych zajęć:** 3
+*   **Podpis:** Roman Bosyl
+------------------------------------------------------------
+Plik: 9.jpg (Czas: 39.80s | Model: gemini-3.1-flash-lite)
+Na podstawie przesłanego zdjęcia dokumentu, oto odpowiedzi na Twoje pytania:
+
+1. **Typ dokumentu:** Jest to formalne oświadczenie o rezygnacji z kontynuowania studiów.
+2. **Tytuł / Główny nagłówek:** "Rezygnacja z kontynuowania studiów".
+3. **Tekst wpisany ręcznie przez studenta:**
+   - **Nazwisko i imię:** Roman Bąk
+   - **Nr albumu:** 55116
+   - **Kierunek/rok studiów:** Informatyka/1
+   - **Miejscowość i data:** Nowy Sącz, dnia 21.01.2026
+   - **W tekście oświadczenia:** 
+     - "Informatyka" (po słowie "na kierunku")
+     - "Inżynieryjny" (po słowie "na Wydziale")
+   - **Podpis:** Roman Bąk
+------------------------------------------------------------
