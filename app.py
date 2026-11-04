@@ -35,8 +35,8 @@ pending_emails = []
 # Konfiguracja SMTP
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SMTP_USER = "wiktor.matusik2000@gmail.com"
-SMTP_PASSWORD = "rqgf haak molr ozjp"
+SMTP_USER = "projektai2137@gmail.com"
+SMTP_PASSWORD = "dnvu rghj ihcl etpd"
 
 def load_baza_emails():
     """Wczytuje mapowanie z baza.json i konwertuje klucze na wielkie litery"""
