@@ -21,7 +21,7 @@ try:
         API_KEY = key_data.get("api_key")
 
     if not API_KEY or API_KEY == "AIzaSyTwojPrawidlowyKluczTutaj...":
-        print("BŁĄD: Plik 'KEY.json' nie zawiera poprawnego klucza API w polu 'api_key'!")
+        print("BŁĄD: Plik 'KEY.json' nie zawiera poprawnego klucza API!")
         exit(1)
 except Exception as e:
     print(f"BŁĄD podczas odczytywania pliku '{key_file_path}': {e}")
@@ -30,34 +30,36 @@ except Exception as e:
 # Inicjalizacja klienta z wczytanym kluczem
 client = genai.Client(api_key=API_KEY)
 
-input_folder = './DataSet1'
+# 2. Baza odbiorców (Słownik mapujący Osoba -> Adres E-mail)
+EMAIL_DIRECTORY = {
+    "JAN KOWALSKI": "jan.kowalski@example.com",
+    "ANNA NOWAK": "anna.nowak@example.com",
+    # Dodaj kolejne osoby według potrzeb
+}
+
+DEFAULT_EMAIL = "twoj_testowy_email@gmail.com"
+
+# Ścieżka do folderu ze zdjęciami testowymi (DataSet1/test)
+input_folder = './DataSet1/test'
 output_folder = './Results'
 report_file = os.path.join(output_folder, 'raport_api_gemini.txt')
 
 os.makedirs(output_folder, exist_ok=True)
 
+if not os.path.exists(input_folder):
+    print(f"BŁĄD: Katalog '{input_folder}' nie istnieje!")
+    exit(1)
+
 pliki = [f for f in os.listdir(input_folder) if f.lower().endswith(('.jpg', '.png', '.jpeg'))]
 
-# Wczytanie instrukcji (prompta) z pliku PROMPT.json
-prompt_file_path = 'PROMPT.json'
-
-if not os.path.exists(prompt_file_path):
-    print(f"BŁĄD: Nie znaleziono pliku '{prompt_file_path}'!")
-    exit(1)
-
-try:
-    with open(prompt_file_path, 'r', encoding='utf-8') as f:
-        prompt_data = json.load(f)
-        PROMPT = prompt_data.get("prompt")
-
-    if not PROMPT:
-        print("BŁĄD: Plik 'PROMPT.json' nie zawiera pola 'prompt'!")
-        exit(1)
-except Exception as e:
-    print(f"BŁĄD podczas odczytywania pliku '{prompt_file_path}': {e}")
-    exit(1)
-
+# Twoje modele
 MODELE = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-2.5-flash']
+
+PROMPT_IMIE_NAZWISKO = (
+    "Przeanalizuj to zdjęcie (wizytówkę lub dokument). Znajdź imię i nazwisko głównej osoby. "
+    "Zwróć TYLKO imię i nazwisko wielkimi literami w jednej linii (np. JAN KOWALSKI). "
+    "Nie dodawaj żadnych innych słów, znaków interpunkcyjnych ani dodatkowego formatowania."
+)
 
 def wywolaj_api_z_retry(image_bytes, prompt):
     for model_name in MODELE:
@@ -76,8 +78,8 @@ def wywolaj_api_z_retry(image_bytes, prompt):
                 return response.text.strip(), model_name
             except Exception as e:
                 err_msg = str(e)
-                if '503' in err_msg or 'UNAVAILABLE' in err_msg:
-                    print(f" (503 na {model_name}, ponawiam za 2s...)", end="", flush=True)
+                if '503' in err_msg or 'UNAVAILABLE' in err_msg or '429' in err_msg:
+                    print(f" (503/błąd na {model_name}, ponawiam za 2s...)", end="", flush=True)
                     time.sleep(2)
                 else:
                     raise e
@@ -87,10 +89,10 @@ if not pliki:
     print(f"Brak plików w folderze '{input_folder}'!")
 else:
     print(f"Pomyślnie wczytano klucz API z '{key_file_path}'.")
-    print(f"Znaleziono {len(pliki)} plików. Startuję wysyłkę...\n")
+    print(f"Znaleziono {len(pliki)} plików w '{input_folder}'. Startuję wysyłkę...\n")
 
     with open(report_file, 'w', encoding='utf-8') as txt:
-        txt.write("=== RAPORT GEMINI API ===\n\n")
+        txt.write("=== RAPORT GEMINI API & WYBÓR E-MAIL ===\n\n")
 
         for index, nazwa_pliku in enumerate(pliki, start=1):
             print(f"[{index}/{len(pliki)}] Przygotowuję: {nazwa_pliku}...", end="", flush=True)
@@ -114,17 +116,26 @@ else:
             t0 = time.time()
 
             try:
-                wynik_tekst, uzyty_model = wywolaj_api_z_retry(buffer.tobytes(), PROMPT)
+                wynik_tekst, uzyty_model = wywolaj_api_z_retry(buffer.tobytes(), PROMPT_IMIE_NAZWISKO)
                 czas = time.time() - t0
 
+                # Czyszczenie tekstu zwracanego przez Gemini
+                odczytana_osoba = wynik_tekst.upper().strip()
+
+                # Dopasowanie e-maila z bazy EMAIL_DIRECTORY
+                target_email = EMAIL_DIRECTORY.get(odczytana_osoba, DEFAULT_EMAIL)
+                tresc_wiadomosci = f"Cześć {odczytana_osoba.title()}, w skrytce czeka Twój dokument."
+
                 txt.write(f"Plik: {nazwa_pliku} (Czas: {czas:.2f}s | Model: {uzyty_model})\n")
-                txt.write(wynik_tekst + "\n")
+                txt.write(f"  Odczytano: {odczytana_osoba}\n")
+                txt.write(f"  Wybrany mail: {target_email}\n")
+                txt.write(f"  Powiadomienie: {tresc_wiadomosci}\n")
                 txt.write("-" * 60 + "\n")
 
-                print(f" -> GOTOWE w {czas:.2f}s ({uzyty_model})!")
+                print(f" -> GOTOWE w {czas:.2f}s ({uzyty_model})! Match: {odczytana_osoba} -> {target_email}")
 
             except Exception as e:
                 print(f" -> BŁĄD API: {e}")
                 txt.write(f"Plik: {nazwa_pliku}\nBŁĄD: {e}\n" + "-" * 60 + "\n")
 
-    print(f"\nKoniec! Zobacz wyniki w pliku: '{report_file}'")
+    print(f"\nKoniec! Wyniki analizy oraz dopasowane maile znajdziesz w: '{report_file}'")
