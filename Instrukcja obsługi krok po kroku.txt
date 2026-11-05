@@ -9,7 +9,13 @@ Otwórz folder w terminalu.
 Krok 3:
 W terminalu napisz: clone https://github.com/WiktorMatusik/Systemy_AI_Projekt.git
 Krok 4:
-Otwórz plik o rozszerzeniu Oczko-demo.bat 
+Otwórz plik o rozszerzeniu Oczko-demo.bat, jeżeli jesteś na Linuxie wpisz w terminalu:
+
+pip3 install opencv-python flask google-genai
+python3 app.py
+Adres wpisać w przeglądarke:
+http://127.0.0.1:5000
+
 Krok 5:
 Teraz otworzy ci się przeglądarka Chrome (nie masz Chrome to wpisz w przeglądarke 127.0.0.1:5000)
 Krok 6:
