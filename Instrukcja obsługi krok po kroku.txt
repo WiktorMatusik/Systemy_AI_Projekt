@@ -8,6 +8,9 @@ Krok 2:
 Otwórz folder w terminalu.
 Krok 3:
 W terminalu napisz: clone https://github.com/WiktorMatusik/Systemy_AI_Projekt.git
+a.
+Zmień nazwę pliku KEY.json.example na KEY.json i wpisz na poczet testu ten klucz API pomiędzy "".
+Klucz: AQ.Ab8RN6Kjw3MjMyt4hAqTnQYcLWDgbrfUHbhhI6OYBU2f9fIWaw...
 Krok 4:
 Otwórz plik o rozszerzeniu Oczko-demo.bat, jeżeli jesteś na Linuxie wpisz w terminalu:
 
@@ -20,3 +23,5 @@ Krok 5:
 Teraz otworzy ci się przeglądarka Chrome (nie masz Chrome to wpisz w przeglądarke 127.0.0.1:5000)
 Krok 6:
 Gotowe, ciesz się aplikacją z wykorzystaniem AI(Sztucznej Inteligencji)
+
+
