@@ -6,7 +6,7 @@ import threading
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from flask import Flask, render_template_string, request, redirect, url_for, send_from_directory
+from flask import Flask, render_template_string, request, redirect, url_for, send_from_directory, session
 from google import genai
 from google.genai import types
 
@@ -60,7 +60,6 @@ pending_emails = load_json_file(PENDING_FILE)
 sent_history = load_json_file(HISTORY_FILE)
 
 def load_baza_emails():
-    """Wczytuje surowe mapowanie z baza.json (zachowując wielkość liter kluczy w słowniku edycyjnym)"""
     if os.path.exists(BAZA_FILE):
         try:
             with open(BAZA_FILE, 'r', encoding='utf-8') as f:
@@ -70,7 +69,6 @@ def load_baza_emails():
     return {}
 
 def save_baza_emails(baza_data):
-    """Zapisuje słownik z powrotem do baza.json"""
     try:
         with open(BAZA_FILE, 'w', encoding='utf-8') as f:
             json.dump(baza_data, f, ensure_ascii=False, indent=4)
@@ -167,7 +165,6 @@ def process_single_image(image_filename):
             if '503' in err_msg or 'UNAVAILABLE' in err_msg or '429' in err_msg:
                 time.sleep(2)
 
-    # Pobieranie bazy z uwzględnieniem wielkich liter kluczy
     raw_baza = load_baza_emails()
     baza_upper = {k.strip().upper(): v.strip() for k, v in raw_baza.items()}
     matched_email = baza_upper.get(odczytana_osoba, "brak_w_bazie@domena.com")
@@ -210,6 +207,43 @@ threading.Thread(target=listen_button, daemon=True).start()
 # 5. STRONA WWW (FLASK INTERFEJS)
 # ==========================================
 app = Flask(__name__)
+app.secret_key = 'tajny_klucz_sesji_skrytka_2026'  # Wymagane do obsługi logowania przez session
+
+LOGIN_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Logowanie - Panel Skrytki</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #eef2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 320px; }
+        h2 { color: #2c3e50; margin-top: 0; text-align: center; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 8px 0 20px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        .btn-login { width: 100%; background: #007bff; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-login:hover { background: #0056b3; }
+        .error { color: #dc3545; font-size: 13px; text-align: center; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>Logowanie</h2>
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+        <form method="POST" action="/login">
+            <label><b>Login:</b></label>
+            <input type="text" name="username" required autocomplete="off">
+
+            <label><b>Hasło:</b></label>
+            <input type="password" name="password" required>
+
+            <button type="submit" class="btn-login">Zaloguj się</button>
+        </form>
+    </div>
+</body>
+</html>
+"""
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -359,6 +393,7 @@ HTML_TEMPLATE = """
         <a href="{{ url_for('index') }}" style="font-weight: bold; color: #fff;">🏠 Strona Główna</a>
         <a href="{{ url_for('lista_osob') }}">👥 Lista osób</a>
         <a href="{{ url_for('ustawienia') }}">⚙️ Ustawienia</a>
+        <a href="{{ url_for('logout') }}" style="color: #ff6b6b; margin-top: 20px;">🚪 Wyloguj się</a>
     </div>
 
     <div class="container">
@@ -490,13 +525,38 @@ HTML_TEMPLATE = """
 </html>
 """
 
+# ==========================================
+# TRASY FLASK (LOGOWANIE + OCHRONA)
+# ==========================================
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        if username == 'admin' and password == 'admin':
+            session['logged_in'] = True
+            return redirect(url_for('index'))
+        else:
+            return render_template_string(LOGIN_TEMPLATE, error="Błędny login lub hasło!")
+    return render_template_string(LOGIN_TEMPLATE)
+
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('login'))
+
+# Zabezpieczenie wszystkich głównych tras za pomocą dekoratora lub sprawdzenia sesji
 @app.route('/')
 def index():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     files = get_available_jpg_files()
     return render_template_string(HTML_TEMPLATE, emails=pending_emails, history=sent_history, available_files=files)
 
 @app.route('/lista-osob')
 def lista_osob():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     baza = load_baza_emails()
     template = """
     <!DOCTYPE html>
@@ -585,6 +645,8 @@ def lista_osob():
 
 @app.route('/update-osoba', methods=['POST'])
 def update_osoba():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     old_name = request.form.get('old_name')
     new_name = request.form.get('new_name').strip().upper()
     new_email = request.form.get('new_email').strip()
@@ -597,7 +659,7 @@ def update_osoba():
             del baza[old_name]
     elif action == 'save':
         if old_name in baza and old_name != new_name:
-            del baza[old_name]  # Usunięcie starego klucza jeśli zmieniono imię/nazwisko
+            del baza[old_name]
         baza[new_name] = new_email
 
     save_baza_emails(baza)
@@ -605,6 +667,8 @@ def update_osoba():
 
 @app.route('/add-osoba', methods=['POST'])
 def add_osoba():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     name = request.form.get('name').strip().upper()
     email = request.form.get('email').strip()
 
@@ -617,6 +681,8 @@ def add_osoba():
 
 @app.route('/ustawienia')
 def ustawienia():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     template = """
     <!DOCTYPE html>
     <html lang="pl">
@@ -650,6 +716,8 @@ def ustawienia():
 
 @app.route('/scan', methods=['POST'])
 def scan_files():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     scan_all = request.form.get('scan_all')
     selected_file = request.form.get('selected_file')
 
@@ -663,6 +731,8 @@ def scan_files():
 
 @app.route('/delete-file', methods=['POST'])
 def delete_file():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     selected_file = request.form.get('selected_file')
     if selected_file:
         safe_filename = os.path.basename(selected_file)
@@ -679,6 +749,8 @@ def delete_file():
 
 @app.route('/action', methods=['POST'])
 def handle_action():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     item_id = int(request.form.get('item_id'))
     action = request.form.get('btn_action')
     email = request.form.get('email')
@@ -705,6 +777,8 @@ def handle_action():
 
 @app.route('/history-action', methods=['POST'])
 def handle_history_action():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     history_id = int(request.form.get('history_id'))
     action = request.form.get('action')
 
@@ -724,6 +798,8 @@ def handle_history_action():
 
 @app.route('/clear-history', methods=['POST'])
 def clear_history():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     global sent_history
     sent_history.clear()
     save_json_file(HISTORY_FILE, sent_history)
@@ -732,6 +808,8 @@ def clear_history():
 
 @app.route('/test-images/<path:filename>')
 def get_test_image(filename):
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     return send_from_directory(TEST_DIR, filename)
 
 if __name__ == '__main__':
